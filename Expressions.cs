@@ -1,10 +1,10 @@
-public class RealNumber
+public class Number
 {
     private long numerator {get;}
 
     private long denominator {get;}
 
-    public RealNumber(double value)
+    public Number(double value)
     {
         if(value % 1 == 0)
         {
@@ -26,7 +26,7 @@ public class RealNumber
         this.denominator = den / gcd;
     }
 
-    public RealNumber(long num, long den)
+    public Number(long num, long den)
     {
         if(den == 0)
         {
@@ -61,7 +61,7 @@ public class RealNumber
     //Skips GCD calculation
     //Used when we know GCD is 1
     //Side note: It's really funny that you can just put false here and it does the exact same thing lmao
-    private RealNumber(long num, long den, bool skipGCD)
+    private Number(long num, long den, bool skipGCD)
     {
         this.numerator = num;
 
@@ -74,43 +74,43 @@ public class RealNumber
         this.denominator = den;
     }
 
-    public static RealNumber operator -(RealNumber a)
+    public static Number operator -(Number a)
     {
-        return new RealNumber(-a.numerator, a.denominator, true);
+        return new Number(-a.numerator, a.denominator, true);
     }
 
-    public static RealNumber operator +(RealNumber a, RealNumber b)
+    public static Number operator +(Number a, Number b)
     {
         long commonDenominator = a.denominator * b.denominator;
         long newNumerator = a.numerator * b.denominator + b.numerator * a.denominator;
 
-        return new RealNumber(newNumerator, commonDenominator);
+        return new Number(newNumerator, commonDenominator);
     }
 
-    public static RealNumber operator -(RealNumber a, RealNumber b)
+    public static Number operator -(Number a, Number b)
     {
         long commonDenominator = a.denominator * b.denominator;
         long newNumerator = a.numerator * b.denominator - b.numerator * a.denominator;
         
-        return new RealNumber(newNumerator, commonDenominator);
+        return new Number(newNumerator, commonDenominator);
     }
 
-    public static RealNumber operator *(RealNumber a, RealNumber b)
+    public static Number operator *(Number a, Number b)
     {
-        return new RealNumber(a.numerator * b.numerator, a.denominator * b.denominator);
+        return new Number(a.numerator * b.numerator, a.denominator * b.denominator);
     }
 
-    public static RealNumber operator /(RealNumber a, RealNumber b)
+    public static Number operator /(Number a, Number b)
     {
-        return new RealNumber(a.numerator * b.denominator, a.denominator * b.numerator);
+        return new Number(a.numerator * b.denominator, a.denominator * b.numerator);
     }
 
-    public static bool operator ==(RealNumber a, RealNumber b)
+    public static bool operator ==(Number a, Number b)
     {
         return a.numerator == b.numerator && a.denominator == b.denominator;
     }
 
-    public static bool operator !=(RealNumber a, RealNumber b)
+    public static bool operator !=(Number a, Number b)
     {
         return !(a == b);
     }
@@ -127,7 +127,7 @@ public class RealNumber
 
     public override bool Equals(object obj)
     {
-        if (obj is RealNumber other)
+        if (obj is Number other)
         {
             return this == other;
         }
@@ -137,68 +137,69 @@ public class RealNumber
 }
 
 
-public class UnaryOperator<I, O>
+public class UnaryOperator
 {
     private int precedence {get;}
 
     //False = left, True = right
     private bool fixture {get;}
-    private string symbol {get;}
 
-    Func<I, O> compute;
+    private Func<Number, Number> compute;
 
-    public UnaryOperator(int precedence, bool fixture, string symbol, Func<I, O> compute)
+    public UnaryOperator(int precedence, bool fixture, Func<Number, Number> compute)
     {
         this.precedence = precedence;
         this.fixture = fixture;
-        this.symbol = symbol;
 
         this.compute = compute;
     }
 
-    public O eval(I x)
+    public Number eval(Number x)
     {
         return compute(x);
     }
 }
 
-public class BinaryOperator<I1, I2, O>
+public class BinaryOperator
 {
     private int precedence {get;}
 
-    private string symbol {get;}
+    private Func<Number, Number, Number> compute;
 
-    private Func<I1, I2, O> computeL;
-
-    public BinaryOperator(int precedence, string symbol, Func<I1, I2, O> compute)
+    public BinaryOperator(int precedence, Func<Number, Number, Number> compute)
     {
         this.precedence = precedence;
-        this.symbol = symbol;
 
-        this.computeL = compute;
+        this.compute = compute;
     }
 
-    public O eval(I1 x, I2 y)
+    public Number eval(Number x, Number y)
     {
-        return computeL(x, y);
+        return compute(x, y);
     }
 }
 
 public class Operators
 {
-    public static Operators instance = null;
+    private static Operators instance;
 
-    Dictionary<string, UnaryOperator<RealNumber, RealNumber>> unaryOperators = new Dictionary<string, UnaryOperator<RealNumber, RealNumber>>();
-    Dictionary<string, BinaryOperator<RealNumber, RealNumber, RealNumber>> binaryOperators = new Dictionary<string, BinaryOperator<RealNumber, RealNumber, RealNumber>>();
+    private Dictionary<string, UnaryOperator> unaryOperators;
+    private Dictionary<string, BinaryOperator> binaryOperators;
 
     private Operators()
     {
-        registerUnaryOperator("-", false, 3, (a) => -a);
+        unaryOperators = new Dictionary<string, UnaryOperator>
+        {
+            { "-", new UnaryOperator(3, true, (Number x) => { return -x; }) }
+        };
 
-        registerBinaryOperator("+", 1, (a, b) => a + b);
-        registerBinaryOperator("-", 1, (a, b) => a - b);
-        registerBinaryOperator("*", 2, (a, b) => a * b);
-        registerBinaryOperator("/", 2, (a, b) => a / b);
+        binaryOperators = new Dictionary<string, BinaryOperator>
+        {
+            { "+", new BinaryOperator(1, (Number x, Number y) => { return x + y; }) },
+            { "-", new BinaryOperator(1, (Number x, Number y) => { return x - y; }) },
+            { "*", new BinaryOperator(2, (Number x, Number y) => { return x * y; }) },
+            { "/", new BinaryOperator(2, (Number x, Number y) => { return x / y; }) }
+        };
     }
 
     public static Operators getInstance()
@@ -211,23 +212,41 @@ public class Operators
         return instance;
     }
 
-    public void registerUnaryOperator(string symbol, bool fixture, int precedence, Func<RealNumber, RealNumber> compute)
+    public void addUnaryOperator(string symbol, int precedence, bool fixture, Func<Number, Number> compute)
     {
-        unaryOperators.Add(symbol, new UnaryOperator<RealNumber, RealNumber>(precedence, fixture, symbol, compute));
+        UnaryOperator op = new UnaryOperator(precedence, fixture, compute);
+        unaryOperators[symbol] = op;
     }
 
-    public void registerBinaryOperator(string symbol, int precedence, Func<RealNumber, RealNumber, RealNumber> compute)
+    public void addBinaryOperator(string symbol, int precedence, Func<Number, Number, Number> compute)
     {
-        binaryOperators.Add(symbol, new BinaryOperator<RealNumber, RealNumber, RealNumber>(precedence, symbol, compute));
+        BinaryOperator op = new BinaryOperator(precedence, compute);
+        binaryOperators[symbol] = op;
     }
 
-    public UnaryOperator<RealNumber, RealNumber> getUnaryOperator(string symbol)
+    public UnaryOperator getUnaryOperator(string symbol)
     {
-        return unaryOperators[symbol];
+        try
+        {
+            return unaryOperators[symbol];
+        }
+
+        catch(KeyNotFoundException)
+        {
+            throw new KeyNotFoundException($"Unary operator '{symbol}' does not exist!");
+        }
     }
 
-    public BinaryOperator<RealNumber, RealNumber, RealNumber> getBinaryOperator(string symbol)
+    public BinaryOperator getBinaryOperator(string symbol)
     {
-        return binaryOperators[symbol];
+        try
+        {
+            return binaryOperators[symbol];
+        }
+
+        catch(KeyNotFoundException)
+        {
+            throw new KeyNotFoundException($"Binary operator '{symbol}' does not exist!");
+        }
     }
 }

@@ -247,4 +247,3 @@ public class Operators
         return registry[key];
     }
 }
-

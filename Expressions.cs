@@ -136,6 +136,61 @@ public class Number
     }
 }
 
+public class Variable
+{
+    public string name {get;}
+
+    public Variable(string name)
+    {
+        this.name = name;
+    }
+
+    public override string ToString()
+    {
+        return name;
+    }
+}
+
+public class Variables
+{
+    private static Variables instance;
+
+    private Dictionary<string, Variable> variables;
+
+    private Variables()
+    {
+        variables = new Dictionary<string, Variable>();
+    }
+
+    public static Variables getInstance()
+    {
+        if(instance == null)
+        {
+            instance = new Variables();
+        }
+
+        return instance;
+    }
+
+    public void registerVariable(string name)
+    {
+        Variable var = new Variable(name);
+        variables[name] = var;
+    }
+
+    public Variable getVariable(string name)
+    {
+        try
+        {
+            return variables[name];
+        }
+
+        catch(KeyNotFoundException)
+        {
+            throw new Exception($"Variable '{name}' does not exist!");
+        }
+    }
+}
 
 public class UnaryOperator
 {
@@ -183,22 +238,22 @@ public class Operators
 {
     private static Operators instance;
 
-    private Dictionary<string, UnaryOperator> unaryOperators;
-    private Dictionary<string, BinaryOperator> binaryOperators;
+    private Dictionary<char, UnaryOperator> unaryOperators;
+    private Dictionary<char, BinaryOperator> binaryOperators;
 
     private Operators()
     {
-        unaryOperators = new Dictionary<string, UnaryOperator>
+        unaryOperators = new Dictionary<char, UnaryOperator>
         {
-            { "-", new UnaryOperator(3, true, (Number x) => { return -x; }) }
+            { '-', new UnaryOperator(3, true, (Number x) => { return -x; }) }
         };
 
-        binaryOperators = new Dictionary<string, BinaryOperator>
+        binaryOperators = new Dictionary<char, BinaryOperator>
         {
-            { "+", new BinaryOperator(1, (Number x, Number y) => { return x + y; }) },
-            { "-", new BinaryOperator(1, (Number x, Number y) => { return x - y; }) },
-            { "*", new BinaryOperator(2, (Number x, Number y) => { return x * y; }) },
-            { "/", new BinaryOperator(2, (Number x, Number y) => { return x / y; }) }
+            { '+', new BinaryOperator(1, (Number x, Number y) => { return x + y; }) },
+            { '-', new BinaryOperator(1, (Number x, Number y) => { return x - y; }) },
+            { '*', new BinaryOperator(2, (Number x, Number y) => { return x * y; }) },
+            { '/', new BinaryOperator(2, (Number x, Number y) => { return x / y; }) }
         };
     }
 
@@ -212,19 +267,24 @@ public class Operators
         return instance;
     }
 
-    public void addUnaryOperator(string symbol, int precedence, bool fixture, Func<Number, Number> compute)
+    public void addUnaryOperator(char symbol, int precedence, bool fixture, Func<Number, Number> compute)
     {
         UnaryOperator op = new UnaryOperator(precedence, fixture, compute);
         unaryOperators[symbol] = op;
     }
 
-    public void addBinaryOperator(string symbol, int precedence, Func<Number, Number, Number> compute)
+    public void addBinaryOperator(char symbol, int precedence, Func<Number, Number, Number> compute)
     {
         BinaryOperator op = new BinaryOperator(precedence, compute);
         binaryOperators[symbol] = op;
     }
 
-    public UnaryOperator getUnaryOperator(string symbol)
+    public bool isOperator(char symbol)
+    {
+        return unaryOperators.ContainsKey(symbol) || binaryOperators.ContainsKey(symbol);
+    }
+
+    public UnaryOperator getUnaryOperator(char symbol)
     {
         try
         {
@@ -237,7 +297,7 @@ public class Operators
         }
     }
 
-    public BinaryOperator getBinaryOperator(string symbol)
+    public BinaryOperator getBinaryOperator(char symbol)
     {
         try
         {
